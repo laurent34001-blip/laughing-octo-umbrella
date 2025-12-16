@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import CreateAnnonce from "./pages/CreateAnnonce";
+import EditAnnonce from "./pages/EditAnnonce";
 import AnnonceDetail from "./pages/AnnonceDetail";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./hooks/useAuth";
@@ -36,6 +37,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <CreateAnnonce />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/annonce/:id/edit"
+            element={
+              <ProtectedRoute>
+                <EditAnnonce />
               </ProtectedRoute>
             }
           />

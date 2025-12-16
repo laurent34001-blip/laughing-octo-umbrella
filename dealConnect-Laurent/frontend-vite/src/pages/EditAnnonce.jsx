@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 
-export default function CreateAnnonce() {
+export default function EditAnnonce() {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [form, setForm] = useState({
@@ -14,7 +17,50 @@ export default function CreateAnnonce() {
   });
 
   const [imageFiles, setImageFiles] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
   const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAnnonce();
+  }, [id]);
+
+  async function fetchAnnonce() {
+    const { data, error } = await supabase
+      .from("annonces")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error || !data) {
+      setStatus("Annonce non trouvée");
+      return;
+    }
+
+    // Vérifier que c'est l'annonce de l'utilisateur
+    if (data.user_id !== user?.id) {
+      navigate("/");
+      return;
+    }
+
+    setForm({
+      titre: data.titre,
+      description: data.description,
+      ville: data.ville,
+      prix: data.prix,
+      commission: data.commission,
+    });
+
+    // Parse les images existantes
+    const images =
+      typeof data.image_url === "string" && data.image_url.startsWith("[")
+        ? JSON.parse(data.image_url)
+        : data.image_url
+          ? [data.image_url]
+          : [];
+    setExistingImages(images);
+    setLoading(false);
+  }
 
   function updateField(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -25,23 +71,21 @@ export default function CreateAnnonce() {
     setImageFiles(files);
   }
 
-  function removeImage(index) {
+  function removeExistingImage(index) {
+    setExistingImages(existingImages.filter((_, i) => i !== index));
+  }
+
+  function removeNewImage(index) {
     setImageFiles(imageFiles.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
-
-    if (!user) {
-      setStatus("Vous devez être connecté pour créer une annonce.");
-      return;
-    }
-
     setStatus("Envoi en cours...");
 
-    const imageURLs = [];
+    const imageURLs = [...existingImages];
 
-    // 1️⃣ UPLOAD IMAGES
+    // Upload nouvelles images
     if (imageFiles.length > 0) {
       for (const imageFile of imageFiles) {
         const fileExt = imageFile.name.split(".").pop();
@@ -64,34 +108,35 @@ export default function CreateAnnonce() {
       }
     }
 
-    // 2️⃣ INSERT DANS LA DB
-    const { error } = await supabase.from("annonces").insert({
-      ...form,
-      prix: Number(form.prix),
-      commission: Number(form.commission),
-      image_url: imageURLs.length > 0 ? JSON.stringify(imageURLs) : null,
-      user_id: user.id,
-    });
+    // Update annonce
+    const { error } = await supabase
+      .from("annonces")
+      .update({
+        titre: form.titre,
+        description: form.description,
+        ville: form.ville,
+        prix: Number(form.prix),
+        commission: Number(form.commission),
+        image_url: imageURLs.length > 0 ? JSON.stringify(imageURLs) : null,
+      })
+      .eq("id", id);
 
     if (error) {
-      setStatus("Erreur d’enregistrement : " + error.message);
+      setStatus("Erreur d'enregistrement : " + error.message);
       return;
     }
 
-    setStatus("Annonce créée avec succès !");
-    setForm({
-      titre: "",
-      description: "",
-      ville: "",
-      prix: "",
-      commission: "",
-    });
-    setImageFiles([]);
+    setStatus("Annonce mise à jour avec succès !");
+    setTimeout(() => {
+      navigate(`/annonce/${id}`);
+    }, 1500);
   }
 
+  if (loading) return <p className="p-6">Chargement...</p>;
+
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Créer une annonce</h1>
+    <div className="max-w-2xl mx-auto p-6 min-h-screen">
+      <h1 className="text-2xl font-bold mb-6">Modifier l'annonce</h1>
 
       <form
         onSubmit={handleSubmit}
@@ -147,9 +192,40 @@ export default function CreateAnnonce() {
           required
         />
 
+        {/* Images existantes */}
+        {existingImages.length > 0 && (
+          <div>
+            <label className="font-semibold block mb-2">
+              Images actuelles ({existingImages.length})
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {existingImages.map((img, index) => (
+                <div
+                  key={index}
+                  className="relative border rounded-lg overflow-hidden bg-gray-100"
+                >
+                  <img
+                    src={img}
+                    alt=""
+                    className="w-full h-24 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeExistingImage(index)}
+                    className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 text-xs hover:bg-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Nouvelles images */}
         <div>
           <label className="font-semibold block mb-2">
-            Images (vous pouvez en ajouter plusieurs)
+            Ajouter des images
           </label>
           <input
             type="file"
@@ -159,11 +235,10 @@ export default function CreateAnnonce() {
             className="w-full mt-2"
           />
 
-          {/* Aperçu des images sélectionnées */}
           {imageFiles.length > 0 && (
             <div className="mt-4">
               <p className="text-sm text-gray-600 mb-2">
-                {imageFiles.length} image(s) sélectionnée(s)
+                {imageFiles.length} nouvelle(s) image(s)
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {imageFiles.map((file, index) => (
@@ -178,7 +253,7 @@ export default function CreateAnnonce() {
                     />
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
+                      onClick={() => removeNewImage(index)}
                       className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 text-xs hover:bg-red-700"
                     >
                       ✕
@@ -193,15 +268,26 @@ export default function CreateAnnonce() {
           )}
         </div>
 
-        <button
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
-          type="submit"
-        >
-          Publier l’annonce
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
+            type="submit"
+          >
+            Mettre à jour l'annonce
+          </button>
+          <button
+            className="flex-1 bg-gray-400 text-white py-3 rounded-lg hover:bg-gray-500 transition"
+            type="button"
+            onClick={() => navigate(`/annonce/${id}`)}
+          >
+            Annuler
+          </button>
+        </div>
 
         {status && (
-          <p className="text-center text-gray-600 mt-2">{status}</p>
+          <p className={`text-center mt-2 ${status.includes("succès") ? "text-green-600" : "text-red-600"}`}>
+            {status}
+          </p>
         )}
       </form>
     </div>

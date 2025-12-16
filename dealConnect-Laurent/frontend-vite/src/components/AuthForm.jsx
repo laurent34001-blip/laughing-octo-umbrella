@@ -1,11 +1,14 @@
 // src/components/AuthForm.jsx
 import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function AuthForm({ type }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -16,6 +19,11 @@ export default function AuthForm({ type }) {
         password,
       });
       if (error) setMsg(error.message);
+      else {
+        setMsg("");
+        const destination = location.state?.from?.pathname || "/";
+        navigate(destination, { replace: true });
+      }
     } else {
       const { error } = await supabase.auth.signUp({
         email,
