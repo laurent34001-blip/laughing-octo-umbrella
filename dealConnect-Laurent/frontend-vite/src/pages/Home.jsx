@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import AnnonceList from "../components/AnnonceList";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Home() {
   const [annonces, setAnnonces] = useState([]);
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchAnnonces();
-  }, [search]);
+  }, [search, category]);
 
   async function fetchAnnonces() {
     setLoading(true);
@@ -24,6 +29,10 @@ export default function Home() {
       query = query.ilike("titre", `%${search}%`);
     }
 
+    if (category) {
+      query = query.eq("categorie", category);
+    }
+
     const { data, error } = await query;
 
     if (error) {
@@ -34,6 +43,14 @@ export default function Home() {
 
     setLoading(false);
   }
+
+  const handleCreateAnnonce = () => {
+    if (!user) {
+      navigate("/register");
+    } else {
+      navigate("/creer-annonce");
+    }
+  };
 
   return (
     <div>
@@ -70,12 +87,12 @@ export default function Home() {
                 >
                   Voir les annonces
                 </a>
-                <a
-                  href="/creer-annonce"
+                <button
+                  onClick={handleCreateAnnonce}
                   className="px-8 py-4 border-2 border-gray-300 text-gray-900 rounded-lg font-semibold hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-300 text-center"
                 >
                   Créer une annonce
-                </a>
+                </button>
               </div>
 
               {/* Stats */}
@@ -146,7 +163,12 @@ export default function Home() {
       <div className="max-w-7xl mx-auto p-6" id="annonces">
         <h2 className="text-3xl font-bold mb-6">Toutes les annonces</h2>
 
-        <SearchBar value={search} onChange={setSearch} />
+        <SearchBar 
+          value={search} 
+          onChange={setSearch}
+          selectedCategory={category}
+          onCategoryChange={setCategory}
+        />
 
         {loading ? (
           <p className="text-center text-gray-400">Chargement...</p>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background gradient circle -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="url(#bgGradient)"/>
+  
+  <!-- D letter -->
+  <path d="M 30 25 L 55 25 Q 65 25 65 40 L 65 60 Q 65 75 55 75 L 30 75 Z M 40 35 L 40 65 L 55 65 Q 60 65 60 60 L 60 40 Q 60 35 55 35 Z" fill="white" stroke="white" stroke-width="1" stroke-linejoin="round"/>
+  
+  <!-- C letter -->
+  <path d="M 75 25 Q 90 25 90 50 Q 90 75 75 75 M 85 30 Q 85 30 80 33 M 85 70 Q 85 70 80 67" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

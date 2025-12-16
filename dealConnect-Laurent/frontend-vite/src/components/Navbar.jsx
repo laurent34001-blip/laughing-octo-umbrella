@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 import { useState, useEffect } from "react";
@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 export default function Navbar() {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
 
@@ -25,6 +26,14 @@ export default function Navbar() {
     setUserProfile({
       avatar_url: userProfileData?.avatar_url || ""
     });
+  };
+
+  const handleCreateAnnonce = () => {
+    if (!user) {
+      navigate("/register");
+    } else {
+      navigate("/creer-annonce");
+    }
   };
 
   return (
@@ -50,6 +59,13 @@ export default function Navbar() {
                 Connexion
               </Link>
 
+              <button
+                onClick={handleCreateAnnonce}
+                className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg hover:scale-105 transition font-semibold flex items-center gap-2"
+              >
+                <span className="text-lg">+</span> Nouvelle annonce
+              </button>
+
               <Link
                 to="/register"
                 className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-medium"
@@ -61,12 +77,12 @@ export default function Navbar() {
 
           {user && (
             <>
-              <Link
-                to="/creer-annonce"
+              <button
+                onClick={handleCreateAnnonce}
                 className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg hover:scale-105 transition font-semibold flex items-center gap-2"
               >
                 <span className="text-lg">+</span> Nouvelle annonce
-              </Link>
+              </button>
 
               <Link
                 to="/dashboard"
@@ -122,6 +138,16 @@ export default function Navbar() {
                 Connexion
               </Link>
 
+              <button
+                onClick={() => {
+                  handleCreateAnnonce();
+                  setIsMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded transition font-semibold"
+              >
+                + Nouvelle annonce
+              </button>
+
               <Link
                 to="/register"
                 className="block px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded transition"
@@ -134,13 +160,15 @@ export default function Navbar() {
 
           {user && (
             <>
-              <Link
-                to="/creer-annonce"
-                className="block px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded font-semibold hover:shadow-lg transition"
-                onClick={() => setIsMenuOpen(false)}
+              <button
+                onClick={() => {
+                  handleCreateAnnonce();
+                  setIsMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded font-semibold hover:shadow-lg transition"
               >
                 + Nouvelle annonce
-              </Link>
+              </button>
 
               <Link
                 to="/dashboard"
